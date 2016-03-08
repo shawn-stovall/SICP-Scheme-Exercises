@@ -1,0 +1,109 @@
+#lang scheme
+(define (corner-split painter n)
+  (if (= n 0)
+      painter
+      (let ((up (up-split painter (- n 1)))
+            (right (right-split painter (- n 1))))
+        (let ((top-left (beside up up))
+              (bottom-right (below right right))
+              (corner (corner-split painter (- n 1))))
+          (beside (below painter top-left)
+                  (below bottom-right corner))))))
+
+(define (square-of-four tl tr bl br)
+  (lambda (painter)
+    (let ((top (beside (tl painter) (tr painter)))
+          (bottom (beside (bl painter) (br painter))))
+      (below bottom top))))
+
+(define (flipped-pairs painter)
+  (let ((combine4 (square-of-four identity flip-vert
+                                  identity flip-vert)))
+    (combine4 painter)))
+
+(define (square-limit painter n)
+  (let ((combine4 (square-of-four flip-horiz identity
+                                  rotate180 flip-vert)))
+    (combine4 (corner-split painter n))))
+
+(define (split m-trans s-trans)
+  (lambda (painter n)
+    (if (= n 0)
+        painter
+        (let ((smaller ((split m-trans s-trans) painter (- n 1))))
+          (m-trans painter (s-trans smaller smaller))))))
+
+(define right-split (split beside below))
+(define up-split (split below beside))
+
+(define (frame-coord-map frame)
+  (lambda (v)
+    (add-vect
+     (origin-frame frame)
+     (add-vect (scale-vect (xcor-vect v)
+                           (edge1-frame frame))
+               (scale-vect (ycor-vect v)
+                           (edge2-frame frame))))))
+
+(define (make-vect x y)
+  (cons x y))
+
+(define (xcor-vect v)
+  (car v))
+
+(define (ycor-vect v)
+  (cdr v))
+
+(define (add-vect v1 v2)
+  (let ((x (+ (xcor-vect v1)
+              (xcor-vect v2)))
+        (y (+ (ycor-vect v1)
+              (ycor-vect v2))))
+    (make-vect x y)))
+
+(define (sub-vect v1 v2)
+  (let ((x (- (xcor-vect v1)
+              (xcor-vect v2)))
+        (y (- (ycor-vect v1)
+              (ycor-vect v2))))
+    (make-vect x y)))
+
+(define (scale-vect s v)
+  (let ((x (* (xcor-vect v) s))
+        (y (* (ycor-vect v) s)))
+    (make-vect x y)))
+
+(define (make-frame origin edge1 edge2)
+  (list origin edge1 edge2))
+
+(define (origin-frame frame)
+  (car frame))
+
+(define (edge1-frame frame)
+  (cadr frame))
+
+(define (edge2-frame frame)
+  (caddr frame))
+
+#|
+(define (make-frame origin edge1 edge2)
+  (cons origin (cons edge1 edge2)))
+
+(define (origin-frame frame)
+  (car frame))
+
+(define (edge1-frame frame)
+  (cadr frame))
+
+(define (edge2-frame frame)
+  (cddr frame))
+|#
+
+(define (segments->painter segment-list)
+  (lambda (frame)
+    (for-each
+     (lambda (segment)
+       (draw-ling
+        ((frame-coord-map frame) (start-segment segment))
+        ((frame-coord-map frame) (end-segment segment))))
+     segment-list)))

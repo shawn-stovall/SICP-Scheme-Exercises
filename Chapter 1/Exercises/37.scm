@@ -1,0 +1,16 @@
+#lang scheme
+(define (cont-frac n d k)
+  (define (iter result count)
+    (let ((n-value (n count))
+          (d-temp (d (- count 1))))
+      (if (= count 1)
+          (/ n-value result)
+          (iter (+ d-temp (/ n-value result))  (- count 1)))))
+  (iter (d k) k))
+
+(define (cont-frac-recur n d k)
+  (define (recur count)
+    (if (= count k)
+        (+ (d (- k 1)) (/ (n k) (d k)))
+        (/ (n k) (+ (d k) (recur (+ count 1))))))
+  (recur 1))

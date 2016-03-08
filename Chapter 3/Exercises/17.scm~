@@ -1,0 +1,21 @@
+(define (member-of? pair pair-list)
+  (if (null? pair-list)
+      #f
+      (cond ((eq? pair (car pair-list)) #t)
+	    (else (member-of? pair (cdr pair-list))))))
+
+(define (count-pairs x)
+  (let ((seen '()))
+    (define (count x)
+      (if (not (pair? x))
+	  0
+	  (cond ((pair? (car x))
+		 (if (member-of? (car x) seen)
+		     (count (cdr x))
+		     (begin (set! seen (cons (car x) seen))
+			    (+ (count (car x))
+			       (count (cdr x))
+			       1))))
+		(else (+ (count (cdr x)) 1)))))
+    (count x)))
+
